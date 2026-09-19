@@ -9,24 +9,23 @@ import requests
 import json
 import os
 
-# ---------------- SETTINGS ----------------
-ctk.set_appearance_mode("Light")  # Light or Dark
+ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
 
 CACHE_FILE = "dictionary_cache.json"
 
-# ---------------- CACHE ----------------
 if os.path.exists(CACHE_FILE):
     with open(CACHE_FILE, "r") as f:
         cache = json.load(f)
 else:
     cache = {}
 
+
 def save_cache():
     with open(CACHE_FILE, "w") as f:
         json.dump(cache, f, indent=4)
 
-# ---------------- SEARCH & DISPLAY ----------------
+
 def search_word(word=None):
     output.config(state="normal")
     output.delete("1.0", "end")
@@ -58,6 +57,7 @@ def search_word(word=None):
         output.insert("end", "Network error.")
         output.config(state="disabled")
 
+
 def display_data(data):
     output.config(state="normal")
     word = data["word"]
@@ -66,13 +66,11 @@ def display_data(data):
     output.insert("end", f"{word.upper()}\n", "title")
     output.insert("end", f"Pronunciation: {phonetic}\n\n", "subtitle")
 
-    # Meanings + definitions + synonyms + antonyms
     for meaning in data.get("meanings", []):
         output.insert("end", f"{meaning.get('partOfSpeech','')}\n", "subtitle")
         for idx, d in enumerate(meaning.get("definitions", []), 1):
             output.insert("end", f"{idx}. {d.get('definition','')}\n")
 
-            # Synonyms
             synonyms = d.get("synonyms", [])
             if synonyms:
                 output.insert("end", "   Synonyms: ")
@@ -85,7 +83,6 @@ def display_data(data):
                     output.tag_bind(s, "<Button-1>", lambda e, w=s: search_word(w))
                 output.insert("end", "\n")
 
-            # Antonyms
             antonyms = d.get("antonyms", [])
             if antonyms:
                 output.insert("end", "   Antonyms: ")
@@ -100,7 +97,7 @@ def display_data(data):
         output.insert("end", "\n")
     output.config(state="disabled")
 
-# ---------------- AUTOSUGGEST ----------------
+
 def auto_suggest(event):
     typed = entry.get().lower()
     suggestions.delete(0, "end")
@@ -110,6 +107,7 @@ def auto_suggest(event):
         if word.startswith(typed):
             suggestions.insert("end", word)
 
+
 def select_suggestion(event):
     if not suggestions.curselection():
         return
@@ -118,66 +116,49 @@ def select_suggestion(event):
     entry.insert(0, selected)
     search_word(selected)
 
-# ---------------- GUI ----------------
+
 app = ctk.CTk()
-app.title("📘 English Dictionary")
+app.title("MASA Lexicon Dictionary")
 app.geometry("850x600")
 
-# Top Frame for search
 top_frame = ctk.CTkFrame(app)
 top_frame.pack(fill="x", padx=10, pady=10)
 
 entry = ctk.CTkEntry(top_frame, width=400, font=("Arial", 16))
-entry.pack(side="left", padx=(0,10))
+entry.pack(side="left", padx=(0, 10))
 entry.bind("<KeyRelease>", auto_suggest)
 
 ctk.CTkButton(top_frame, text="Search", command=search_word, width=100).pack(side="left")
 ctk.CTkButton(
-    top_frame, text="🌙 Toggle Theme",
-    command=lambda: ctk.set_appearance_mode(
-        "Dark" if ctk.get_appearance_mode() == "Light" else "Light")
+    top_frame,
+    text="🌙 Toggle Theme",
+    command=lambda: ctk.set_appearance_mode("Dark" if ctk.get_appearance_mode() == "Light" else "Light"),
 ).pack(side="right")
 
-# Main Frame
 main_frame = ctk.CTkFrame(app)
 main_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
-# Suggestions Listbox
 suggestions = tk.Listbox(
-    main_frame,
-    height=15,
-    font=("Arial", 12),
-    bg="#1e1e1e",
-    fg="white",
-    selectbackground="#3b82f6",
-    width=25
+    main_frame, height=15, font=("Arial", 12), bg="#1e1e1e", fg="white", selectbackground="#3b82f6", width=25
 )
-suggestions.pack(side="left", fill="y", padx=(0,5))
+suggestions.pack(side="left", fill="y", padx=(0, 5))
 suggestions.bind("<<ListboxSelect>>", select_suggestion)
 
-# Output Textbox with Scrollbar
 output_frame = ctk.CTkFrame(main_frame)
 output_frame.pack(side="left", fill="both", expand=True)
 
 output_scroll = ctk.CTkScrollbar(output_frame, orientation="vertical")
 output_scroll.pack(side="right", fill="y")
 
-output = tk.Text(
-    output_frame,
-    wrap="word",
-    font=("Arial", 14),
-    yscrollcommand=output_scroll.set
-)
+output = tk.Text(output_frame, wrap="word", font=("Arial", 14), yscrollcommand=output_scroll.set)
 output.pack(fill="both", expand=True)
 output_scroll.configure(command=output.yview)
 output.config(state="disabled")
 
-# Tag styles
 output.tag_config("title", font=("Arial", 20, "bold"), foreground="#3b82f6")
 output.tag_config("subtitle", font=("Arial", 14, "bold"), foreground="#555555")
 
-# Search history
 history = tk.Listbox(main_frame, height=15, font=("Arial", 12))
-history.pack(side="right", fill="y", padx=(5,0))
+history.pack(side="right", fill="y", padx=(5, 0))
 
 app.mainloop()
